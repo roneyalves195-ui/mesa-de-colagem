@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Anton", "Arial Narrow", sans-serif;
+  --font-body: "Libre Franklin", Georgia, sans-serif;
+  --font-type: "Courier Prime", "Courier New", monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-desk: #211e18;
+  --color-desk2: #2a261e;
+  --color-desk3: #332e24;
+  --color-paper: #ece3cd;
+  --color-paper2: #e3d7ba;
+  --color-paper3: #d7c8a4;
+  --color-cream: #f5eedb;
+  --color-ink: #26221a;
+  --color-inksoft: #6a614c;
+  --color-stampred: #bd3420;
+  --color-stringred: #d8452e;
+  --color-marker: #2f4f8f;
+  --color-tapec: #e3d49c;
+  --color-manila: #d3b273;
+  --color-boardgreen: #41553f;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-cream);
+  min-height: 100vh;
+  background-color: var(--color-desk);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(189, 52, 32, 0.08), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(65, 85, 63, 0.10), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 3px);
+  background-attachment: fixed;
+}
+
+@layer components {
+  .btn-paper {
+    font-family: var(--font-type);
+    background-color: var(--color-desk3);
+    color: var(--color-cream);
+    border: 1px solid rgba(245, 238, 219, 0.25);
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .btn-paper:hover { background-color: #463d2c; }
+  .btn-paper:active { transform: translateY(1px); }
+
+  .btn-primary {
+    font-family: var(--font-type);
+    background-color: var(--color-stampred);
+    color: var(--color-cream);
+    border: none;
+    padding: 0.7rem 1.2rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 3px 0 #7a2013;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 0 #7a2013; }
+  .btn-primary:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #7a2013; }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .paper-card {
+    background-color: var(--color-desk3);
+    border: 1px solid rgba(0,0,0,0.5);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  }
+}

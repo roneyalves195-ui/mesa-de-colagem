@@ -76,20 +76,32 @@ export default function StagePreview({ config, hoverId, seekTick }: Props) {
             return (
               <div
                 key={el.id}
-                className="absolute bg-paper2 border border-ink/30"
+                className={`absolute overflow-hidden ${
+                  el.image
+                    ? 'bg-cream border-4 border-cream shadow-lg'
+                    : el.kind === 'strip'
+                    ? 'bg-paper'
+                    : el.kind === 'tape'
+                    ? 'bg-tapec/70'
+                    : 'bg-paper2 border border-ink/30'
+                }`}
                 style={{
                   left: `${(el.x + pose.dx) * 100}%`,
                   top: `${(el.y + pose.dy) * 100}%`,
                   width: `${el.w * 100}%`,
-                  height: `${el.h * 100}%`,
+                  height: `${Math.abs(el.h) * 100}%`,
                   transform: `rotate(${el.rot + pose.rot}deg) scale(${pose.scale})`,
                   zIndex: i + 1,
                   opacity: pose.alpha,
                 }}
               >
-                <div className="w-full h-full flex items-center justify-center text-center p-2 text-ink text-xs font-bold">
-                  {el.name}
-                </div>
+                {el.image ? (
+                  <img src={el.image} alt={el.name} className="w-full h-full object-cover" draggable={false} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-center p-2 text-ink text-xs font-bold">
+                    {el.name}
+                  </div>
+                )}
               </div>
             );
           })}

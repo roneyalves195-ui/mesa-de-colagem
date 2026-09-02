@@ -1,45 +1,54 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import StagePreview from './components/StagePreview';
 import TimelinePanel from './components/TimelinePanel';
 import OutputTabs from './components/OutputTabs';
+import ImageUpload from './components/ImageUpload';
+import VideoExporter from './components/VideoExporter';
 import { PipelineSection, RulesSection, SiteFooter } from './components/LowerSections';
 import { Config, DEFAULT_CONFIG } from './lib/model';
-
-const KEY = 'mesa-colagem-v1';
-
-function loadConfig(): Config {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const c = JSON.parse(raw) as Config;
-      if (c && Array.isArray(c.elements) && typeof c.buildEnd === 'number') return c;
-    }
-  } catch { /* primeiro acesso */ }
-  return DEFAULT_CONFIG;
-}
+import { autoGenerateConfig } from './lib/imageSlicer';
 
 export default function App() {
-  const [config, setConfig] = useState<Config>(loadConfig);
+  const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [seekTick, setSeekTick] = useState<{ t: number; n: number } | null>(null);
-
-  useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(config)); } catch { /* modo privado */ }
-  }, [config]);
+  const [generating, setGenerating] = useState(false);
 
   const onSeek = (t: number) => setSeekTick({ t, n: Date.now() });
+
+  const handleImage = async (dataUrl: string) => {
+    setGenerating(true);
+    try {
+      const generated = await autoGenerateConfig(dataUrl, 'Cena gerada');
+      setConfig(generated);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 pb-10">
-        <header className="pt-6 sm:pt-9 pb-8">
-          <h1 className="font-display text-6xl text-cream">Mesa de Colagem</h1>
-          <p className="text-cream/75 mt-2">Coreografe a montagem quadro a quadro</p>
+        <header className="pt-10 sm:pt-14 pb-10 border-b border-cream/10">
+          <p className="font-type text-stampred text-sm tracking-wide mb-3">Caso Nº 47 · Pré-produção</p>
+          <h1 className="font-display text-5xl sm:text-7xl text-cream leading-[0.95]">
+            Mesa de<br />Colagem
+          </h1>
+          <p className="text-cream/60 mt-4 max-w-md">
+            Suba uma foto, veja a animação de colagem se montar sozinha, e baixe o vídeo pronto.
+          </p>
         </header>
 
-        <main>
+        <main className="pt-8">
+          <div className="mb-6">
+            <ImageUpload onImage={handleImage} busy={generating} />
+          </div>
+
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_432px] items-start">
-            <StagePreview config={config} hoverId={hoverId} seekTick={seekTick} />
+            <div className="flex flex-col gap-4">
+              <StagePreview config={config} hoverId={hoverId} seekTick={seekTick} />
+              <VideoExporter config={config} />
+            </div>
             <TimelinePanel
               config={config}
               setConfig={setConfig}

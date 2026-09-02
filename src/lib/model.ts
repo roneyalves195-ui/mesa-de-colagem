@@ -11,6 +11,7 @@ export interface ElementDef {
   w: number;
   h: number;
   rot: number;
+  image?: string;
 }
 
 export interface Config {
