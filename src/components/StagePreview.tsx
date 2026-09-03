@@ -13,6 +13,7 @@ export default function StagePreview({ config, hoverId, seekTick }: Props) {
   const tRef = useRef(0);
   const rafRef = useRef(0);
   const lastTsRef = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const tq = quantize(t);
   const frame = Math.min(config.duration * config.fps, Math.floor(t * config.fps) + 1);
@@ -21,20 +22,26 @@ export default function StagePreview({ config, hoverId, seekTick }: Props) {
     if (seekTick) {
       tRef.current = seekTick.t;
       setT(seekTick.t);
+      if (audioRef.current) audioRef.current.currentTime = seekTick.t;
     }
   }, [seekTick]);
 
   useEffect(() => {
-    if (!playing) return;
+    if (!playing) {
+      audioRef.current?.pause();
+      return;
+    }
+    audioRef.current?.play().catch(() => {});
     lastTsRef.current = performance.now();
 
     const tick = (ts: number) => {
       const dt = Math.min(0.1, (ts - lastTsRef.current) / 1000);
       lastTsRef.current = ts;
-      let nt = tRef.current + dt;
+      let nt = audioRef.current ? audioRef.current.currentTime : tRef.current + dt;
 
       if (nt >= config.duration) {
         nt = nt % config.duration;
+        if (audioRef.current) audioRef.current.currentTime = 0;
       }
 
       tRef.current = nt;
@@ -50,11 +57,14 @@ export default function StagePreview({ config, hoverId, seekTick }: Props) {
   const restart = () => {
     tRef.current = 0;
     setT(0);
+    if (audioRef.current) audioRef.current.currentTime = 0;
     setPlaying(true);
   };
 
   return (
     <section aria-label="Palco de pré-visualização">
+      {config.audioUrl && <audio ref={audioRef} src={config.audioUrl} preload="auto" />}
+
       <div className="relative bg-desk3 border border-black/50 p-4 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-cream font-bold">Prévia Stop-Motion</h3>
@@ -120,8 +130,10 @@ export default function StagePreview({ config, hoverId, seekTick }: Props) {
             step={1 / config.fps}
             value={t}
             onChange={(e) => {
-              tRef.current = parseFloat(e.target.value);
-              setT(parseFloat(e.target.value));
+              const v = parseFloat(e.target.value);
+              tRef.current = v;
+              setT(v);
+              if (audioRef.current) audioRef.current.currentTime = v;
             }}
           />
           <div className="text-center text-sm text-cream/60 mt-1 font-mono">

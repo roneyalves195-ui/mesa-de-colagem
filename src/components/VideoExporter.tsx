@@ -17,6 +17,21 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+async function getAudioTracks(audio: HTMLAudioElement): Promise<MediaStreamTrack[]> {
+  const anyAudio = audio as any;
+  if (typeof anyAudio.captureStream === 'function') {
+    const stream: MediaStream = anyAudio.captureStream();
+    return stream.getAudioTracks();
+  }
+  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+  const ctx = new AudioCtx();
+  const source = ctx.createMediaElementSource(audio);
+  const dest = ctx.createMediaStreamDestination();
+  source.connect(dest);
+  source.connect(ctx.destination);
+  return dest.stream.getAudioTracks();
+}
+
 export default function VideoExporter({ config }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dlRef = useRef<HTMLAnchorElement>(null);
@@ -98,12 +113,27 @@ export default function VideoExporter({ config }: Props) {
       return;
     }
 
-    const stream = canvas.captureStream(config.fps);
-    let mimeType = 'video/webm;codecs=vp9';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
+    const videoStream = canvas.captureStream(config.fps);
+    let combinedStream = videoStream;
+    let audioEl: HTMLAudioElement | null = null;
+
+    if (config.audioUrl) {
+      setStatus('Carregando áudio...');
+      audioEl = new Audio(config.audioUrl);
+      audioEl.crossOrigin = 'anonymous';
+      await new Promise<void>((resolve) => {
+        audioEl!.addEventListener('canplaythrough', () => resolve(), { once: true });
+        audioEl!.load();
+      });
+      const audioTracks = await getAudioTracks(audioEl);
+      combinedStream = new MediaStream([...videoStream.getVideoTracks(), ...audioTracks]);
+    }
+
+    let mimeType = 'video/webm;codecs=vp9,opus';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8,opus';
     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
 
-    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
+    const recorder = new MediaRecorder(combinedStream, { mimeType, videoBitsPerSecond: 6_000_000 });
     const chunks: Blob[] = [];
     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
@@ -120,16 +150,23 @@ export default function VideoExporter({ config }: Props) {
     setStatus('Gravando...');
     recorder.start();
 
-    const holdTime = 1.2;
+    const holdTime = audioEl ? 0.2 : 1.2;
     const totalTime = config.duration + holdTime;
     const startedAt = performance.now();
 
+    if (audioEl) {
+      audioEl.currentTime = 0;
+      audioEl.play().catch(() => {});
+    }
+
     const step = (now: number) => {
-      const t = (now - startedAt) / 1000;
+      const t = audioEl ? audioEl.currentTime : (now - startedAt) / 1000;
       drawFrame(ctx, images, Math.min(t, config.duration));
-      if (t < totalTime) {
+      const elapsed = (now - startedAt) / 1000;
+      if (elapsed < totalTime) {
         requestAnimationFrame(step);
       } else {
+        audioEl?.pause();
         setTimeout(() => recorder.stop(), 150);
       }
     };

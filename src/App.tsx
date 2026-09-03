@@ -3,10 +3,12 @@ import StagePreview from './components/StagePreview';
 import TimelinePanel from './components/TimelinePanel';
 import OutputTabs from './components/OutputTabs';
 import ImageUpload from './components/ImageUpload';
+import AudioUpload from './components/AudioUpload';
 import VideoExporter from './components/VideoExporter';
 import { PipelineSection, RulesSection, SiteFooter } from './components/LowerSections';
 import { Config, DEFAULT_CONFIG } from './lib/model';
 import { autoGenerateConfig } from './lib/imageSlicer';
+import { rescaleConfigToDuration } from './lib/audioSync';
 
 export default function App() {
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
@@ -16,14 +18,22 @@ export default function App() {
 
   const onSeek = (t: number) => setSeekTick({ t, n: Date.now() });
 
-  const handleImage = async (dataUrl: string) => {
+  const handleImage = async (dataUrl: string, theme: string) => {
     setGenerating(true);
     try {
-      const generated = await autoGenerateConfig(dataUrl, 'Cena gerada');
-      setConfig(generated);
+      const generated = await autoGenerateConfig(dataUrl, theme);
+      setConfig((prev) => ({ ...generated, audioUrl: prev.audioUrl }));
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleAudio = (dataUrl: string, duration: number) => {
+    setConfig((prev) => rescaleConfigToDuration({ ...prev, audioUrl: dataUrl }, duration));
+  };
+
+  const removeAudio = () => {
+    setConfig((prev) => ({ ...prev, audioUrl: undefined }));
   };
 
   return (
@@ -35,13 +45,16 @@ export default function App() {
             Mesa de<br />Colagem
           </h1>
           <p className="text-cream/60 mt-4 max-w-md">
-            Suba uma foto, veja a animação de colagem se montar sozinha, e baixe o vídeo pronto.
+            Suba uma foto, um áudio, e baixe o vídeo com a colagem sincronizada.
           </p>
         </header>
 
         <main className="pt-8">
-          <div className="mb-6">
+          <div className="mb-4">
             <ImageUpload onImage={handleImage} busy={generating} />
+          </div>
+          <div className="mb-6">
+            <AudioUpload onAudio={handleAudio} onRemove={removeAudio} hasAudio={!!config.audioUrl} />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_432px] items-start">

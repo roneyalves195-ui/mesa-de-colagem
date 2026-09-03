@@ -17,6 +17,7 @@ export interface ElementDef {
 export interface Config {
   title: string;
   theme?: string;
+  audioUrl?: string;
   fps: number;
   duration: number;
   buildEnd: number;
