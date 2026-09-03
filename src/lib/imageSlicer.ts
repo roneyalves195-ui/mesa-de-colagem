@@ -23,9 +23,10 @@ function cropToDataUrl(
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 
-export async function autoGenerateConfig(dataUrl: string, title = 'Cena gerada'): Promise<Config> {
+export async function autoGenerateConfig(dataUrl: string, theme: string): Promise<Config> {
   const img = await loadImage(dataUrl);
   const w = img.width, h = img.height;
+  const title = theme.trim() || 'Cena gerada';
 
   const heroImg = cropToDataUrl(img, 0, 0, w, h, 700);
   const cutTL = cropToDataUrl(img, 0, 0, w * 0.5, h * 0.5, 420);
@@ -42,5 +43,5 @@ export async function autoGenerateConfig(dataUrl: string, title = 'Cena gerada')
     { id: 'auto-cut3', name: 'Recorte 3', kind: 'cutout', t: 2.4, dur: 0.4, x: 0.10, y: 0.60, w: 0.24, h: 0.24, rot: 5, image: cutBL },
   ];
 
-  return { title, fps: 24, duration: 6.0, buildEnd: 4.5, elements };
+  return { title, theme, fps: 24, duration: 6.0, buildEnd: 4.5, elements };
 }

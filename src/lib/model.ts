@@ -16,6 +16,7 @@ export interface ElementDef {
 
 export interface Config {
   title: string;
+  theme?: string;
   fps: number;
   duration: number;
   buildEnd: number;
@@ -24,6 +25,7 @@ export interface Config {
 
 export const DEFAULT_CONFIG: Config = {
   title: 'Caso Nº 47 — Arquivo Aberto',
+  theme: '',
   fps: 24,
   duration: 6.0,
   buildEnd: 4.5,
